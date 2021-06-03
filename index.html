@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y6R1HV46NK"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+    
+      gtag('config', 'G-Y6R1HV46NK');
+    </script>
+    <script data-ad-client="ca-pub-1543572984360054" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <title>Siebel - eScript Memory Leak Analyzer</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
+    <script src="https://unpkg.com/axios@0.2.1/dist/axios.min.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <h1>Siebel - eScript Memory Leak Analyzer</h1>
+      <hr>
+      <div id="description">
+        <p>This tool was created to analyze Siebel eScript code searching for Memory Leak candidates, where variables may not be properly destroyed or the destruction order is not correct.
+           This page is currently in Beta and in constant update.<br>
+           Feedbacks are highly appreciated, in case you find any bug, please feel free to reach out to me on Twitter at <a href="https://twitter.com/jpmmota" target="_blank">@jpmmota</a>.</p>
+      </div>
+      <hr>
+        <h2><u>Instructions</u></h2>
+        <p>1. Export eScripts from your Siebel Repository by running below SQL depending on your current version:</p>
+        <p><b>BEFORE IP17</b></p>
+        <div id="code">
+        select 'APPLET', applet.name, script.created, script.created_by, script.last_upd, script.last_upd_by, script.name, script.script from SIEBEL.S_APPL_WEBSCRPT script, SIEBEL.S_APPLET applet
+        where applet.row_id = SCRIPT.APPLET_ID and SCRIPT.REPOSITORY_ID = (select ROW_ID from siebel.s_repository where name = 'Siebel Repository') and applet.inactive_flg = 'N' and script.inactive_flg = 'N'
+        UNION ALL<br>
+        select 'APPLICATION', application.NAME, script.created, script.created_by, script.last_upd, script.last_upd_by, script.name, script.script from SIEBEL.S_APPL_SCRIPT script, SIEBEL.S_APPLICATION application
+        where script.REPOSITORY_ID = (select ROW_ID from siebel.s_repository where name = 'Siebel Repository') and script.application_id = application.row_id  and application.inactive_flg = 'N' and script.inactive_flg = 'N'
+        UNION ALL<br>
+        select 'BUSINESS COMPONENT', BC.NAME, script.created, script.created_by, script.last_upd, script.last_upd_by, script.name, script.script from SIEBEL.S_BUSCOMP_SCRIPT script, SIEBEL.S_BUSCOMP BC
+        where script.REPOSITORY_ID = (select ROW_ID from siebel.s_repository where name = 'Siebel Repository') and bc.row_id = SCRIPT.BUSCOMP_ID  and BC.inactive_flg = 'N' and script.inactive_flg = 'N'
+        UNION ALL<br>
+        select 'BUSINESS SERVICE', BS.NAME, script.created, script.created_by, script.last_upd, script.last_upd_by, script.name, script.script from SIEBEL.S_SERVICE_SCRPT script, SIEBEL.S_SERVICE BS
+        where script.REPOSITORY_ID = (select ROW_ID from siebel.s_repository where name = 'Siebel Repository') and bs.row_id = SCRIPT.SERVICE_ID  and BS.inactive_flg = 'N' and script.inactive_flg = 'N'
+        </div>
+        <div><p><b>AFTER IP17</b></p></div>
+        <div id="code">
+        select 'APPLET', applet.name, script.created, script.created_by, script.last_upd, script.last_upd_by, script.name, script.script from SIEBEL.S_APPL_WEBSCRPT script, SIEBEL.S_APPLET applet
+        where applet.row_id = SCRIPT.APPLET_ID and SCRIPT.REPOSITORY_ID = (select WKS.repository_id from SIEBEL.S_WORKSPACE WKS where WKS.NAME='MAIN' and WKS.REPOSITORY_ID = (select row_id from S_REPOSITORY where NAME = 'Siebel Repository')) and applet.inactive_flg = 'N' and script.inactive_flg = 'N' 
+        UNION ALL<br>
+        select 'APPLICATION', application.NAME, script.created, script.created_by, script.last_upd, script.last_upd_by, script.name, script.script from SIEBEL.S_APPL_SCRIPT script, SIEBEL.S_APPLICATION application
+        where script.REPOSITORY_ID = (select repository_id from SIEBEL.S_WORKSPACE where NAME='MAIN' and REPOSITORY_ID = (select row_id from SIEBEL.S_REPOSITORY where NAME = 'Siebel Repository')) and script.application_id = application.row_id  and application.inactive_flg = 'N' and script.inactive_flg = 'N' 
+        UNION ALL<br>
+        select 'BUSINESS COMPONENT', BC.NAME, script.created, script.created_by, script.last_upd, script.last_upd_by, script.name, script.script from SIEBEL.S_BUSCOMP_SCRIPT script, SIEBEL.S_BUSCOMP BC
+        where script.REPOSITORY_ID = (select repository_id from SIEBEL.S_WORKSPACE where NAME='MAIN' and REPOSITORY_ID = (select row_id from SIEBEL.S_REPOSITORY where NAME = 'Siebel Repository')) and bc.row_id = SCRIPT.BUSCOMP_ID  and BC.inactive_flg = 'N' and script.inactive_flg = 'N' 
+        UNION ALL<br>
+        select 'BUSINESS SERVICE', BS.NAME, script.created, script.created_by, script.last_upd, script.last_upd_by, script.name, script.script from SIEBEL.S_SERVICE_SCRPT script, SIEBEL.S_SERVICE BS
+        where script.REPOSITORY_ID = (select repository_id from SIEBEL.S_WORKSPACE where NAME='MAIN' and REPOSITORY_ID = (select row_id from SIEBEL.S_REPOSITORY where NAME = 'Siebel Repository')) and bs.row_id = SCRIPT.SERVICE_ID and BS.inactive_flg = 'N' and script.inactive_flg = 'N'
+        </div>
+        <p>2. Export the result as a CSV file using UTF-8 as encoding.</p>
+        <p>3. Upload the CSV file to run the analysis:</p>
+        <div v-if="!image" id="uploadButton" >
+          <input type="file" id="file" @change="onFileChange">
+      </div>
+      <div v-else id="uploadButton" >
+        <button v-if="!uploadURL" @click="uploadImage">Submit for analysis!</button>
+      </div>
+      <h2 v-if="uploadURL">Please wait while the file is being processed...</h2>
+      <h2 v-if="resultFile">Analysis has finished, <a v-bind:href="resultFile">click here</a> to download the result file.</h2>
+      
+      <footer>
+        <hr>
+        <small>&copy; Copyright 2021. All Rights Reserved.<br>Joao Paulo de Matos Mota (<a href="https://twitter.com/jpmmota" target="_blank">@jpmmota</a>).</small>
+      </footer> 
+    </div>
+  
+    <script>
+      const MAX_IMAGE_SIZE = 10000000 // 10MB
+      const API_ENDPOINT = 'https://8ob1wrhro3.execute-api.ca-central-1.amazonaws.com'
+
+      new Vue({
+        el: "#app",
+        data: {
+          image: '',
+          uploadURL: '',
+          resultFile: ''
+        },
+        methods: {
+          onFileChange (e) {
+            let files = e.target.files || e.dataTransfer.files
+            if (!files.length) return
+            this.createImage(files[0])
+          },
+          createImage (file) {
+            let reader = new FileReader()
+            reader.onload = (e) => {
+              if (!e.target.result.includes('data:text/csv')) {
+                return alert('Wrong file type - CSV only.')
+              }
+              if (e.target.result.length > MAX_IMAGE_SIZE) {
+                return alert('File is loo large. 10MB limit')
+              }
+              this.image = e.target.result
+            }
+            reader.readAsDataURL(file)
+          },
+          removeImage: function (e) {
+            this.image = ''
+          },
+          uploadImage: async function (e) {
+            this.uploadURL = "Upload started!"
+            // Get the presigned URL
+            const response = await axios({
+              method: 'GET',
+              url: API_ENDPOINT + "/uploads"
+            })
+            let fileName = response['Key']
+            let binary = atob(this.image.split(',')[1])
+            let array = []
+            for (var i = 0; i < binary.length; i++) {
+              array.push(binary.charCodeAt(i))
+            }
+            let blobData = new Blob([new Uint8Array(array)], {type: 'text/csv'})
+            const result = await fetch(response.uploadURL, {
+              method: 'PUT',
+              body: blobData
+            })
+
+            // Final URL for the user doesn't need the query string params
+            this.uploadURL = response.uploadURL.split('?')[0]
+
+            // Call MemLeak function
+            let payload = { "file": fileName }
+            resultFile = await axios.post(API_ENDPOINT + "/escript-memleak-analyzer", payload)
+            this.resultFile = resultFile
+          }
+        }
+      })
+    </script>
+    <style type="text/css">
+      body {
+        background: #20262E;
+        padding: 20px;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      #app {
+        background: #fff;
+        border-radius: 4px;
+        padding: 20px;
+        transition: all 0.2s;
+        text-align: center;
+      }
+      #logo {
+        width: 100px;
+      }
+      h2 {
+        font-weight: bold;
+        margin-bottom: 15px;
+      }
+      h1, h2 {
+        font-weight: normal;
+        margin-bottom: 15px;
+      }
+      a {
+        color: #42b983;
+      }
+      img {
+        width: 30%;
+        margin: auto;
+        display: block;
+        margin-bottom: 10px;
+      }
+      #code{
+        background: #f4f4f4;
+        border: 1px solid #ddd;
+        color: #666;
+        page-break-inside: avoid;
+        font-family:'Courier New', Courier, monospace;
+        font-size: 13px;
+        line-height: 1.3;
+        text-align: left;
+        margin-bottom: 1.6em;
+        max-width: 100%;
+        overflow: auto;
+        padding: 1em 1.5em;
+        display: block;
+        word-wrap: break-word;
+      }
+      #description{
+        margin-bottom: 15px;
+        display: block;
+      }
+      p {
+        padding-left: 10px;
+        text-align: left;
+      }
+      #uploadButton {
+        padding-left: 5px;
+        display: block;
+        text-align: left;
+      }
+      footer{
+        padding-top: 30px;
+      }
+    </style>
+  </body>
+</html>
