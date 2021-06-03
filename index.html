@@ -20,9 +20,21 @@
       <h1>Siebel - eScript Memory Leak Analyzer</h1>
       <hr>
       <div id="description">
-        <p>This tool was created to analyze Siebel eScript code searching for Memory Leak candidates, where variables may not be properly destroyed or the destruction order is not correct.
-           This page is currently in Beta and in constant update.<br>
-           Feedbacks are highly appreciated, in case you find any bug, please feel free to reach out to me on Twitter at <a href="https://twitter.com/jpmmota" target="_blank">@jpmmota</a>.</p>
+        <p>This tool was created to analyze Siebel eScript code searching for Memory Leak candidates, where variables may not be properly destroyed or the destruction order is not correct.</p>
+           <p>It will parse eScript code in the repository searching for variables not destroyed and Business Objects and Business Components that were not destroyed in the correct order (BC then BO).</p>
+
+            <p>Variable types evaluated:</p>
+            <ul>
+              <li>ActiveBusObject</li>
+              <li>GetBusObject</li>
+              <li>GetBusComp</li>
+              <li>ParentBusComp</li>
+              <li>GetService</li>
+              <li>NewPropertySet</li>
+              <li>GetMVGBusComp</li>
+              <li>GetPicklistBusComp</li>
+            </ul>
+          <p>This page is currently in Beta and in constant update. Feedbacks are highly appreciated, in case you find any bug, please feel free to reach out to me on Twitter at <a href="https://twitter.com/jpmmota" target="_blank">@jpmmota</a>.</p>
       </div>
       <hr>
         <h2><u>Instructions</u></h2>
@@ -199,6 +211,9 @@
       }
       footer{
         padding-top: 30px;
+      }
+      li {
+        text-align: left;
       }
     </style>
   </body>
