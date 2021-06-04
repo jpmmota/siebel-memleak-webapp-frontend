@@ -142,6 +142,7 @@
             // Call MemLeak function
             let payload = { "file": fileName }
             resultFile = await axios.post(API_ENDPOINT + "/escript-memleak-analyzer", payload)
+            console.log(resultFile)
             this.resultFile = resultFile
           }
         }
