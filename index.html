@@ -77,6 +77,7 @@
       </div>
       <h2 v-if="uploadURL">Please wait while the file is being processed...</h2>
       <h2 v-if="resultFile">Analysis has finished, <a v-bind:href="resultFile">click here</a> to download the result file.</h2>
+      <h2 v-if="resultFileError">An error has occurred. If the input file seems ok, please reach out to me on Twitter at <a href="https://twitter.com/jpmmota" target="_blank">@jpmmota</a>.</h2>
       
       <footer>
         <hr>
@@ -93,7 +94,8 @@
         data: {
           image: '',
           uploadURL: '',
-          resultFile: ''
+          resultFile: '',
+          resultFileError: ''
         },
         methods: {
           onFileChange (e) {
@@ -141,9 +143,11 @@
 
             // Call MemLeak function
             let payload = { "file": fileName }
-            resultFile = await axios.post(API_ENDPOINT + "/escript-memleak-analyzer", payload)
-            console.log(resultFile)
-            this.resultFile = resultFile
+            await axios.post(API_ENDPOINT + "/escript-memleak-analyzer", payload).then((response) => {
+              this.resultFile = response;
+            }, (error) => {
+              this.resultFileError = true;
+            });
           }
         }
       })
