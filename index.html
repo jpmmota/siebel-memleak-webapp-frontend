@@ -108,7 +108,9 @@
             reader.onload = (e) => {
               console.log(e.target.result)
               if (!e.target.result.includes('data:text/csv')) {
-                return alert('Wrong file type - CSV only.')
+                if (!e.target.result.includes('data:application/vnd.ms-excel')) {
+                  return alert('Wrong file type - CSV only.')
+                }
               }
               if (e.target.result.length > MAX_IMAGE_SIZE) {
                 return alert('File is loo large. 10MB limit')
