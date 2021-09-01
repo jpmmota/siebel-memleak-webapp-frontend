@@ -106,6 +106,7 @@
           createImage (file) {
             let reader = new FileReader()
             reader.onload = (e) => {
+              console.log(e.target.result)
               if (!e.target.result.includes('data:text/csv')) {
                 return alert('Wrong file type - CSV only.')
               }
