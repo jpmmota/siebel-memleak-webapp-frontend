@@ -106,7 +106,7 @@
           createImage (file) {
             let reader = new FileReader()
             reader.onload = (e) => {
-              console.log(e.target.result)
+              //console.log(e.target.result)
               if (!e.target.result.includes('data:text/csv')) {
                 if (!e.target.result.includes('data:application/vnd.ms-excel')) {
                   return alert('Wrong file type - CSV only.')
